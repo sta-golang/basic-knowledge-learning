@@ -1,0 +1,81 @@
+package main
+
+import (
+	"fmt"
+	"io/ioutil"
+	"strings"
+	"time"
+)
+
+//naoBingxing more
+//start := time.Now()
+// time.Since(start)
+//ioutil.ReadDir(path)
+//file.isDir()
+
+//最多允许500个工人同时工作
+var Maxpeople int = 500
+var name string = "a"
+var cnt int
+var workerCount int = 0
+var searchRequest = make(chan string)
+var workerDown = make(chan bool)
+var resultworker = make(chan bool)
+//包工头请求新工人
+//工人说我做完了
+//工人说找到的结果
+
+func main(){
+	start := time.Now()
+	workerCount = 1
+	time.Since(start)
+	go search("E:\\")
+	//todo: search()
+	waitforworkers()
+	fmt.Println(cnt)
+	fmt.Println(time.Since(start))
+}
+
+func waitforworkers(){
+	for{
+		select{
+		case path := <-searchRequest:
+			workerCount++
+			go search(path)
+		case <-workerDown:
+			workerCount--
+			if workerCount == 0{
+				return
+			}
+		case <-resultworker:
+			cnt++
+		}
+	}
+}
+
+
+func search(path string){
+	files, _ := ioutil.ReadDir(path)
+	for _,file := range(files){
+		if strings.Contains(file.Name(),name){
+			resultworker <- true
+		}
+		if file.IsDir(){
+			//if workerCount < Maxpeople{
+			//	//go search(path + file.Name()+"\\")
+				searchRequest <- path + file.Name() + "\\"
+			//}else{
+			//	search(path + file.Name() + "\\")
+			//}
+		}
+	}
+	workerDown <- true
+}
+
+
+
+
+
+
+
+
